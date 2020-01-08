@@ -1,0 +1,9 @@
+numpy
+scipy
+
+Cython
+
+qiskit
+projectq
+
+quantuminspire
