@@ -7,3 +7,5 @@ qiskit
 projectq
 
 quantuminspire
+
+pytest
