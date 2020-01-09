@@ -1,6 +1,13 @@
 import numpy as np
 
 
+def find_co_prime(n, stochastic=False, at_least=0):
+    if stochastic:
+        return find_co_prime_stochastic(n)
+    else:
+        return find_co_prime_deterministic(n, at_least)
+
+
 def find_co_prime_deterministic(n, at_least=0):
     """
     This finds a number that is co-prime with n, such that it is larger than 'at_least'.
@@ -40,7 +47,7 @@ def find_prime_factors(n, a):
     """
     p1 = np.gcd(n, a - 1)
     p2 = np.gcd(n, a + 1)
-    if not (p1 != 1 and p2 != 1 and p1 != n and p2 != n):
+    if (p1 == 1 and p2 == 1) or (p1 == n and p2 == n) or (p1 == 1 and p2 == n) or (p1 == n and p2 == 1):
         return "\033[91mBad luck: Found {} and {}\033[0m".format(p1, p2)
     else:
         if p1 == 1 or p1 == n:
