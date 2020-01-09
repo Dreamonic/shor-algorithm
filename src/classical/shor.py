@@ -28,7 +28,7 @@ def find_co_prime_deterministic(n, at_least=0):
 def find_co_prime_stochastic(n):
     a = int(np.random.randint(2, high=n))
     if np.gcd(n, a) != 1:
-        return -a
+        return -np.gcd(n, a)
     return a
 
 
