@@ -11,8 +11,7 @@ from src.quantum import qft
 def find_period_1(engine, N):
     n = int(np.ceil(np.log2(N)))
 
-    # a = shor.find_co_prime_stochastic(N)
-    a = 14
+    a = shor.find_co_prime_stochastic(N)
     if a < 0:
         print("Factor is", -a)
         exit(0)
