@@ -145,7 +145,7 @@ if __name__ == '__main__':
     engine, qi_backend = get_engine(qi_api)
 
     # X, CNOT, H, Measure, All
-    N = 35
+    N = 15
 
     find_period_1(engine, N)
 

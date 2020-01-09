@@ -1,5 +1,3 @@
-import time
-
 import numpy as np
 
 
@@ -40,7 +38,15 @@ def find_prime_factors(n, a):
     :param a: A number co-prime with n.
     :return: The 2 prime factors of n.
     """
-    return np.gcd(n, a - 1), np.gcd(n, a + 1)
+    p1 = np.gcd(n, a - 1)
+    p2 = np.gcd(n, a + 1)
+    if not (p1 != 1 and p2 != 1 and p1 != n and p2 != n):
+        return "\033[91mBad luck: Found {} and {}\033[0m".format(p1, p2)
+    else:
+        if p1 == 1 or p1 == n:
+            return p2, int(n / p2)
+        else:
+            return p1, int(n / p1)
 
 
 def find_period(n, a):
