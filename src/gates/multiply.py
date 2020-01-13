@@ -7,7 +7,7 @@ from src.util.math import modinv
 
 
 def _CMultModN(eng, c, x, qubits, ancilla, a, N):
-    n = len(qubits)
+    n = len(x)
 
     qft(eng, qubits)
     for i in range(n):
@@ -16,7 +16,7 @@ def _CMultModN(eng, c, x, qubits, ancilla, a, N):
 
 
 def CMultModN(eng, c, x, qubits, ancilla, a, N):
-    n = len(qubits)
+    n = len(x)
     _CMultModN(eng, c, x, qubits, ancilla, a, N)
     for i in range(n):
         Swap | (x[i], qubits[i])

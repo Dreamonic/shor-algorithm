@@ -2,11 +2,12 @@ from fractions import Fraction
 
 import numpy as np
 from projectq.libs.math import MultiplyByConstantModN
-from projectq.ops import All, H, C, Measure
+from projectq.ops import All, H, C, Measure, X, Rz
 
 from src.classical import shor
 from src.gates import qft
 from src.gates.multiply import CMultModN
+from src.gates.rotate import calculate_phase
 
 
 def find_period_1(engine, N):
@@ -64,13 +65,60 @@ def find_period_2(engine, N):
 
     qft.qft_inverse(engine, ctrl)
 
-    All(Measure) | ctrl
-    All(Measure) | b
-    All(Measure) | x
-    Measure | ancilla
+    # All(Measure) | ctrl
+    # All(Measure) | b
+    # All(Measure) | x
+    # Measure | ancilla
 
     engine.flush()
     measurements = [int(q) for q in ctrl]
+    y = sum([(measurements[2 * n - 1 - i] * 1. / (1 << (i + 1)))
+             for i in range(2 * n)])
+    period = Fraction(y).limit_denominator(N - 1).denominator
+    print("period found =", period)
+    if period % 2 != 0:
+        period *= 2
+
+    if np.mod(period, 2) == 0:
+        print(shor.find_prime_factors(N, pow(a, int(period / 2))))
+
+
+def find_period_3(engine, N):
+    n = int(np.ceil(np.log2(N)))
+    a = shor.find_co_prime_stochastic(N)
+    if a < 0:
+        print("Factor is", -a)
+        exit(0)
+    print("a =", a)
+
+    measurements = [0] * (2 * n)
+
+    x = engine.allocate_qureg(n)
+    b = engine.allocate_qureg(n + 1)
+    c = engine.allocate_qubit()
+    ancilla = engine.allocate_qubit()
+
+    X | x[0]
+
+    for i in range(2 * n):
+        H | c
+        CMultModN(engine, c, x, b, ancilla, pow(a, 2 ** i), N)
+
+        for j in range(i):
+            if measurements[j]:
+                Rz(-calculate_phase(i - j)) | c
+        H | c
+
+        Measure | c
+        engine.flush()
+        measurements[i] = int(c)
+        if measurements[i]:
+            X | c
+
+    All(Measure) | b
+    All(Measure) | x
+    All(Measure) | ancilla
+
     y = sum([(measurements[2 * n - 1 - i] * 1. / (1 << (i + 1)))
              for i in range(2 * n)])
     period = Fraction(y).limit_denominator(N - 1).denominator
