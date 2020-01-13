@@ -11,7 +11,7 @@ def high_level_gates(eng, cmd):
     if g == QFT or get_inverse(g) == QFT or g == Swap:
         return True
     if isinstance(g, BasicMathGate):
-        return False
+        return True
         if isinstance(g, AddConstant):
             return True
         elif isinstance(g, AddConstantModN):

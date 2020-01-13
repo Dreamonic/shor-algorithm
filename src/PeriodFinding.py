@@ -12,7 +12,7 @@ from quantuminspire.api import QuantumInspireAPI
 from quantuminspire.credentials import load_account, get_token_authentication, get_basic_authentication
 
 from src.engines.pq_engine import get_engine
-from src.quantum.period_finding import find_period_1
+from src.quantum.period_finding import find_period_1, find_period_2
 
 QI_EMAIL = os.getenv('QI_EMAIL')
 QI_PASSWORD = os.getenv('QI_PASSWORD')
@@ -147,7 +147,7 @@ if __name__ == '__main__':
     # X, CNOT, H, Measure, All
     N = 15
 
-    find_period_1(engine, N)
+    find_period_2(engine, N)
 
     #              for i in range(2 * n)])
     # print('Probabilities {0}'.format(qi_backend.get_probabilities(qubits)))

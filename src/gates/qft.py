@@ -1,18 +1,15 @@
-import numpy as np
 from projectq.meta import Dagger
 from projectq.ops import H, CRz, X
 
-
-def calculate_phase(m):
-    return 2 * np.pi / (2 ** m)
+from src.gates.rotate import calculate_phase
 
 
 def qft(eng, qubits):
     m = len(qubits)
-    for i in range(m):
+    for i in range(m-1, -1, -1):
         H | qubits[i]
-        for j in range(i+1, m):
-            CRz(calculate_phase(j + 1)) | (qubits[j], qubits[i])
+        for j in range(2, i + 2):
+            CRz(calculate_phase(j)) | (qubits[i - j + 1], qubits[i])
 
 
 def qft_inverse(eng, qubits):
