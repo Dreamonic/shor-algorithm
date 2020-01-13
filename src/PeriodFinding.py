@@ -3,6 +3,7 @@ This example is copied from https://github.com/ProjectQ-Framework/ProjectQ
 and is covered under the Apache 2.0 license.
 """
 import os
+import time
 from getpass import getpass
 
 from projectq.backends import ResourceCounter
@@ -147,7 +148,10 @@ if __name__ == '__main__':
     # X, CNOT, H, Measure, All
     N = 35
 
+    start = time.time()
     find_period_3(engine, N)
+    end = time.time()
+    print("Time elapsed:", end-start, "seconds")
 
     #              for i in range(2 * n)])
     # print('Probabilities {0}'.format(qi_backend.get_probabilities(qubits)))
