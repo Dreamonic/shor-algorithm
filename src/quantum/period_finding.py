@@ -1,8 +1,10 @@
 from fractions import Fraction
 
 import numpy as np
+import src.gates.qiskit.gate as gates
 from projectq.libs.math import MultiplyByConstantModN
 from projectq.ops import All, H, C, Measure, X, Rz
+from qiskit import QuantumRegister, QuantumCircuit, ClassicalRegister, execute, BasicAer
 
 from src.classical import shor
 from src.gates import qft
