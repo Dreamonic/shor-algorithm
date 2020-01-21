@@ -1,9 +1,10 @@
 from copy import deepcopy
 
-from projectq.ops import Measure, X, CNOT, Swap
+import numpy as np
+from projectq.ops import Rx, Swap, Measure
 
-from src.engines.pq_engine import get_engine
 from src.topology.circuit_qubit import BUS, LOGICAL, CircuitQubit
+from src.topology.gates2.gate_set import ISwap
 
 
 class Circuit:
@@ -15,6 +16,8 @@ class Circuit:
         self.bus_count = 0
         self.logical_count = 0
         self.gates_applied = 0
+        self.single_applied = 0
+        self.two_applied = 0
 
     def get_qubit_nodes(self):
         return list(self.graph.keys())
@@ -100,10 +103,12 @@ class Circuit:
 
     def apply_single_qubit_gate(self, gate, name):
         self.gates_applied += 1
+        self.single_applied += 1
         gate | self.qubit(name)
 
     def apply_two_qubit_gate(self, gate, name1, name2):
         self.gates_applied += 1
+        self.two_applied += 1
         gate | self.qubit(name1, name2)
 
     def apply_ld_two_qubit_gate(self, gate, name1, name2):
@@ -115,7 +120,7 @@ class Circuit:
 
         path = self.find_shortest_path(bus_connection, target)
         self.swap_path(reversed(path))
-        gate | (node.qubit.qubit, bus_connection.qubit.qubit)
+        self.apply_two_qubit_gate(gate, name1, bus_connection.name)
         self.swap_path(path)
 
     def swap_path(self, path):
@@ -140,6 +145,7 @@ class Circuit:
 
     def swap(self, node1, node2):
         self.gates_applied += 1
+        self.two_applied += 1
         Swap | (node1.qubit.qubit, node2.qubit.qubit)
 
     def qubit(self, name1, name2=None):
@@ -165,6 +171,11 @@ class Circuit:
                 logical += "\t" + str(q) + " : " + str(n) + "\n"
 
         return "<CIRCUIT\n" + bus + logical + ">"
+
+    def __del__(self):
+        for node in self.graph.keys():
+            Measure | node.qubit.qubit
+            del node.qubit.qubit
 
 
 class CircuitNode:
@@ -200,21 +211,88 @@ class CircuitNode:
         return hash(str(self))
 
     def __str__(self):
-        return "<QUBIT=" + self.name + ">"
+        return "<QUBIT=" + self.name + " : " + str(self.qubit.qubit) + ">"
 
     def __repr__(self):
-        return "<QUBIT=" + self.name + ">"
+        return "<QUBIT=" + self.name + " : " + str(self.qubit.qubit) + ">"
 
 
-# qi_api = get_api_session()
-qi_engine, qi_backend = get_engine()
+class FakeCircuit(Circuit):
+    def __init__(self, graph=None):
+        super().__init__(graph)
 
-circuit = Circuit()
-circuit.create_bus(qi_engine, 3)
-circuit.add_all_logicals(qi_engine)
-print(circuit)
-circuit.apply_single_qubit_gate(X, 'log_0')
-circuit.apply_ld_two_qubit_gate(Swap, 'log_0', 'log_5')
-circuit.apply_single_qubit_gate(Measure, 'log_5')
-print("The amount of gates applied is:", circuit.gates_applied)
-print("The measurement result is:", int(circuit.get_qubits()['log_5'].qubit[0]))
+    def create_bus(self, engine, n):
+        self.bus_count = n
+        return
+
+    def add_all_logicals(self, engine):
+        for i in range(2 * self.bus_count):
+            bit = CircuitQubit(engine, bit_type=LOGICAL)
+            node = CircuitNode("log_" + str(i), bit)
+            self.add_qubit(node)
+        return
+
+    def is_valid_edge(self, qubit1, qubit2, directed=0):
+        return True
+
+    def apply_single_qubit_gate(self, gate, name):
+        self.gates_applied += 1
+        self.single_applied += 1
+        gate | self.qubit(name)
+
+    def apply_two_qubit_gate(self, gate, name1, name2):
+        self.gates_applied += 1
+        self.two_applied += 1
+        gate | self.qubit(name1, name2)
+
+    def apply_ld_two_qubit_gate(self, gate, name1, name2):
+        if self.get_qubit(name1).bit_type == BUS or self.get_qubit(name2).bit_type == BUS:
+            raise Exception("Long distance two qubit gate operations can only be applied to logical qubits")
+        self.apply_two_qubit_gate(gate, name1, name2)
+
+    def qubit(self, name1, name2=None):
+        if name2 is None:
+            return self.get_qubit(name1).qubit
+
+        q1 = self.get_qubit_node(name1)
+        q2 = self.get_qubit_node(name2)
+        return q1.qubit.qubit, q2.qubit.qubit
+
+    def __str__(self):
+        bus = ""
+        logical = ""
+        for q in self.get_qubit_nodes():
+            n = list(self.graph[q])
+            n.sort()
+            if q.qubit.bit_type == BUS:
+                bus += "\t" + str(q) + " : " + str(n) + "\n"
+            if q.qubit.bit_type == LOGICAL:
+                logical += "\t" + str(q) + " : " + str(n) + "\n"
+
+        return "<CIRCUIT\n" + bus + logical + ">"
+
+
+class AdvancedCircuit(Circuit):
+    def swap(self, node1, node2):
+        self.gates_applied += 6
+        self.single_applied += 3
+        self.two_applied += 3
+        ISwap | (node1.qubit.qubit, node2.qubit.qubit)
+        Rx(-np.pi / 2) | node2.qubit.qubit
+        ISwap | (node1.qubit.qubit, node2.qubit.qubit)
+        Rx(-np.pi / 2) | node1.qubit.qubit
+        ISwap | (node1.qubit.qubit, node2.qubit.qubit)
+        Rx(-np.pi / 2) | node2.qubit.qubit
+
+# # qi_api = get_api_session()
+# qi_engine, qi_backend = get_engine()
+#
+# circuit = Circuit()
+# circuit.create_bus(qi_engine, 3)
+# circuit.add_all_logicals(qi_engine)
+# print(circuit)
+# circuit.apply_single_qubit_gate(X, 'log_0')
+# circuit.apply_ld_two_qubit_gate(Swap, 'log_0', 'log_5')
+# circuit.apply_single_qubit_gate(Measure, 'log_5')
+# print("The amount of gates applied is:", circuit.gates_applied)
+# print("The measurement result is:", int(circuit.get_qubits()['log_5'].qubit[0]))

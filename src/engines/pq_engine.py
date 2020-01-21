@@ -34,4 +34,5 @@ def get_engine(api=None):
                        resource_counter]
 
     # make the compiler and run the circuit on the simulator backend
-    return MainEngine(Simulator(), compilerengines), None
+    backend = Simulator()
+    return MainEngine(backend, compilerengines), backend
