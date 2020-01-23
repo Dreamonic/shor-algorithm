@@ -171,7 +171,7 @@ class Circuit:
         q1 = self.node(name1)
         q2 = self.node(name2)
         if q2 not in self.graph[q1]:
-            raise Exception("Can only apply two qubit gates on neighbouring qubits.")
+            raise Exception("Can only apply two qubit all_gates on neighbouring qubits.")
         else:
             if gate not in self.restrictions.available_gates:
                 raise Exception("Gate" + str(gate) + "is not part of available set")

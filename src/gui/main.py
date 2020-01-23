@@ -1,6 +1,7 @@
 import io
 import sys
 import tkinter as tk
+import uuid
 
 import numpy as np
 from projectq import MainEngine
@@ -10,11 +11,14 @@ from projectq.ops import X, Rz
 from src.classical import shor
 from src.gui.circuit import CircuitGui
 from src.gui.circuit_mapper import get_mapping, get_reg_to_coordinate_mapping, InstructionReducer, QubitController
-from src.topology.circuit import AdvancedCircuit
-from src.topology.gates.multiply import CMultModN
-from src.topology.gates2.prepare_number import prepare_number
-from src.topology.gates2.rotate import calculate_phase
-from src.topology.gates2.simple import H
+from src.topology.all_gates.multiply import CMultModN
+from src.topology.circuit import AdvancedCircuit, FakeCircuit, Circuit
+from src.topology.parallel_gates.prepare_number import prepare_number
+from src.topology.parallel_gates.rotate import calculate_phase
+from src.topology.parallel_gates.simple import H
+
+cache_file = None
+max_instructions = 0
 
 
 def callback(text, instr, controller):
@@ -57,11 +61,6 @@ def capture_output_mod(circuit, qi_engine, a, nx, N, n):
     prepare_number(qi_engine, circuit, x, nx)
 
     CMultModN(qi_engine, circuit, c, x, qubits, ancilla, a, N)
-
-    # if qi_backend is None:
-    # for i in range(n + 1, 2 * n + 2):
-    #     circuit.apply_single_qubit_gate(Measure, "log_" + str(i))
-    # All(Measure) | x
 
     output = sys.stdout.getvalue()
     sys.stdout = _stdout
@@ -112,17 +111,25 @@ if __name__ == '__main__':
     circuit_backend = CommandPrinter()
     qi_engine = MainEngine(circuit_backend)
 
-    circuit = AdvancedCircuit()
+    circuit = Circuit()
     circuit.create_bus(qi_engine, n + 2)
     circuit.add_all_logicals(qi_engine)
 
-    output = capture_output_mod(circuit, qi_engine, a, nx, N, n)
+    output = None
+    if cache_file is None:
+        output = capture_output_mod(circuit, qi_engine, a, nx, N, n)
+        f = open("../../cached/" + str(uuid.uuid4()) + ".cache", "w+")
+        f.write(output)
+        f.close()
+        print("Amount of gate operations:", circuit.gates_applied)
+        print("Amount of single gate operations:", circuit.single_applied)
+        print("Amount of two qubit operations:", circuit.two_applied)
+        print("Estimated amount of time (ns):", circuit.single_applied + circuit.two_applied * 10)
+    else:
+        f = open("../../cached/" + cache_file + ".cache", "r")
+        output = f.read()
+        f.close()
     instr = InstructionReducer(output)
-
-    print("Amount of gate operations:", circuit.gates_applied)
-    print("Amount of single gate operations:", circuit.single_applied)
-    print("Amount of two qubit operations:", circuit.two_applied)
-    print("Estimated amount of time (ns):", circuit.single_applied + circuit.two_applied * 10)
 
     root = tk.Tk()
     root.protocol('WM_DELETE_WINDOW', close)  # root is your root window
@@ -145,5 +152,7 @@ if __name__ == '__main__':
     canvas.grid()
     for i in range(len(instr)):
         root.after(100 * i, lambda: timer_callback(text, instr, controller))
+        if max_instructions != 0 and i > max_instructions:
+            break
 
     root.mainloop()
