@@ -21,7 +21,6 @@ def find_period(engine, N):
     All(H) | qubits[0:(2 * n)]
 
     for i in range(2 * n):
-        # with Control(engine, qubits[i]):
         C(MultiplyByConstantModN(pow(a, 2 ** i, N), N)) | (qubits[i], qubits[(2 * n):(3 * n)])
 
     qft.qft_inverse(engine, qubits[0:(2 * n)])

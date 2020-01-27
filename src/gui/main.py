@@ -17,17 +17,16 @@ from src.topology.parallel_gates.prepare_number import prepare_number
 from src.topology.parallel_gates.rotate import calculate_phase
 from src.topology.parallel_gates.simple import H
 
-cache_file = None
-max_instructions = 0
+cache_file = "fake"
+max_instructions = 1000
 
 
-def callback(text, instr, controller):
+def callback(root, text, instr, controller):
     def f():
-        controller.clean_up()
-        text.delete(1.0, tk.END)
-        next_instruction = instr.next()
-        text.insert(tk.END, next_instruction)
-        controller.execute_instr(next_instruction)
+        for i in range(len(instr)):
+            root.after(100 * i, lambda: timer_callback(text, instr, controller))
+            if max_instructions != 0 and i > max_instructions:
+                break
 
     return f
 
@@ -145,14 +144,11 @@ if __name__ == '__main__':
     controller = QubitController(circuit_gui, mapping)
 
     text = tk.Text(canvas, height=2, width=40)
-    button = tk.Button(canvas, text="NEXT INSTRUCTION", command=callback(text, instr, controller))
+    button = tk.Button(canvas, text="NEXT INSTRUCTION", command=callback(root, text, instr, controller))
     canvas.create_window(100, 20, window=button)
     canvas.create_window(400, 20, window=text)
 
     canvas.grid()
-    for i in range(len(instr)):
-        root.after(100 * i, lambda: timer_callback(text, instr, controller))
-        if max_instructions != 0 and i > max_instructions:
-            break
+
 
     root.mainloop()

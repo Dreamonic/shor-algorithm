@@ -2,6 +2,14 @@ import numpy as np
 
 
 def find_co_prime(n, stochastic=False, at_least=0):
+    """
+    This finds a number that is co-prime with n, such that it is larger than 'at_least'.
+    In case there is no such number it will raise an exception.
+
+    :param n: The number that should be factored into primes.
+    :param at_least: The threshold for the co-prime number, i.e. the result should be larger than 'at_least'.
+    :return: A number co-prime with n.
+    """
     if stochastic:
         return find_co_prime_stochastic(n)
     else:
@@ -31,6 +39,11 @@ def find_co_prime_deterministic(n, at_least=0):
 
 
 def find_co_prime_stochastic(n):
+    """
+    Find a factor that is coprime with n randomly.
+    :param n:  The number that should be factored into primes.
+    :return: A number co-prime with n.
+    """
     a = int(np.random.randint(2, high=n))
     if np.gcd(n, a) != 1:
         return -np.gcd(n, a)
